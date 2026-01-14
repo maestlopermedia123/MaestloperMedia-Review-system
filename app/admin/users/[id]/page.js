@@ -29,11 +29,14 @@ import {
 import Link from 'next/link';
 import { use } from 'react';
 import RazorpayButton from '@/components/RazorpayButton';
+import TaskPrice from '@/components/TaskPrice';
 
 export default function UserDetailPage({ params }) {
   const [transferAmount, setTransferAmount] = useState("");
   const [userData, setUserData] = useState(null);
   const [tasks, setTasks] = useState([]);
+  // const [priceMap, setPriceMap] = useState({});
+
   const [loading, setLoading] = useState(true);
   const [sendingFunds, setSendingFunds] = useState(false);
   const [counter, setCounter] = useState(0);
@@ -50,6 +53,8 @@ export default function UserDetailPage({ params }) {
   const resolvedParams = use(params); 
   const userId = resolvedParams.id;
 
+
+  // console.log('Tasks in UserDetailPage:', tasks); 
   // Fetch user details
   useEffect(() => {
     const fetchUserData = async () => {
@@ -76,7 +81,6 @@ export default function UserDetailPage({ params }) {
         submission => submission.user === userId
       ) || [];
       
-      console.log("User's task submissions:", userSubmissions);
       setCounter(userSubmissions.length);
       setTasks(userSubmissions);
       
@@ -253,6 +257,26 @@ export default function UserDetailPage({ params }) {
     }
   };
 
+  // Handle Razorpay payment success for individual task
+  const handleTaskPaymentSuccess = (paymentId, amount, taskData) => {
+    alert(`Payment successful for Task ${taskData.taskId}! Payment ID: ${paymentId}, Amount: $${amount}`);
+    
+    // Update user balance after successful payment
+    setUserData(prev => ({
+      ...prev,
+      balance: (parseFloat(prev.balance) + parseFloat(amount)).toFixed(2)
+    }));
+    
+    // You can also update the specific task status or add payment info here
+    console.log('Task payment details:', taskData);
+  };
+
+  // Handle Razorpay payment failure for individual task
+  const handleTaskPaymentFailure = (error, taskData) => {
+    alert(`Payment failed for Task ${taskData.taskId}: ${error}`);
+    console.log('Task payment failed details:', taskData);
+  };
+
   // Format date
   const formatDate = (dateString) => {
     if (!dateString) return "N/A";
@@ -285,7 +309,7 @@ export default function UserDetailPage({ params }) {
     return oldestDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
   };
 
-  // Handle Razorpay payment success
+  // Handle Razorpay payment success (global)
   const handlePaymentSuccess = (paymentId, amount) => {
     alert(`Payment successful! Payment ID: ${paymentId}, Amount: $${amount}`);
     
@@ -296,7 +320,7 @@ export default function UserDetailPage({ params }) {
     }));
   };
 
-  // Handle Razorpay payment failure
+  // Handle Razorpay payment failure (global)
   const handlePaymentFailure = (error) => {
     alert(`Payment failed: ${error}`);
   };
@@ -649,171 +673,206 @@ export default function UserDetailPage({ params }) {
                 <p className="text-slate-500">This user hasn't submitted any tasks yet.</p>
               </div>
             ) : (
-              tasks.map((task) => (
-                <div key={task._id} className="bg-white rounded-[2.5rem] border border-slate-200 p-8 shadow-sm hover:border-indigo-200 transition-all">
-                  <div className="flex flex-col md:flex-row gap-8">
-                    
-                    {/* Proof Image/Video */}
-                    <div className="w-full md:w-48 h-48 rounded-3xl overflow-hidden bg-slate-100 relative group cursor-zoom-in">
-                      {task.proof?.screenshotUrl ? (
-                        <a
-                          href={task.proof.screenshotUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="block w-full h-full"
-                        >
-                          <img 
-                            src={task.proof.screenshotUrl} 
-                            alt="Proof screenshot" 
-                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" 
-                          />
-                        </a>
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-slate-100 to-slate-200">
-                          <ImageIcon className="text-slate-400" size={40} />
-                        </div>
-                      )}
+tasks.map((task) => (
+  <div key={task._id} className="bg-white rounded-[2.5rem] border border-slate-200 p-8 shadow-sm hover:border-indigo-200 transition-all">
+    <div className="flex flex-col md:flex-row gap-8">
+      
+      {/* Proof Image/Video - LEFT SIDE */}
+      <div className="w-full md:w-48 h-48 rounded-3xl overflow-hidden bg-slate-100 relative group cursor-zoom-in">
+        {task.proof?.screenshotUrl ? (
+          <a
+            href={task.proof.screenshotUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block w-full h-full"
+          >
+            <img 
+              src={task.proof.screenshotUrl} 
+              alt="Proof screenshot" 
+              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" 
+            />
+          </a>
+        ) : (
+          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-slate-100 to-slate-200">
+            <ImageIcon className="text-slate-400" size={40} />
+          </div>
+        )}
 
-                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
-                        <ImageIcon className="text-white" />
-                      </div>
-                    </div>
+        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
+          <ImageIcon className="text-white" />
+        </div>
+      </div>
 
-                    {/* Task Details */}
-                    <div className="flex-1">
-                      <div className="flex items-start justify-between mb-2">
-                        <div>
-                          <span className="text-[10px] font-black text-indigo-500 uppercase tracking-[0.2em]">
-                            {task.task ? task.task.substring(0, 8) + "..." : "No Task ID"}
-                          </span>
-                          <h3 className="text-lg font-bold text-slate-800">
-                            Submission ID: {task._id?.substring(0, 12)}...
-                          </h3>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-xs text-slate-400 font-medium">
-                            Submitted: {formatDate(task.submittedAt)}
-                          </p>
-                          <p className="text-xs text-slate-400 font-medium">
-                            Updated: {formatDate(task.updatedAt)}
-                          </p>
-                        </div>
-                      </div>
+      {/* Task Details - RIGHT SIDE */}
+      <div className="flex-1">
+        {/* Task ID and Timestamps */}
+        <div className="flex items-start justify-between mb-4">
+          <div>
+            <span className="text-[10px] font-black text-indigo-500 uppercase tracking-[0.2em]">
+              {task.task ? task.task.substring(0, 8) + "..." : "No Task ID"}
+            </span>
+            <h3 className="text-lg font-bold text-slate-800">
+              Submission ID: {task._id?.substring(0, 12)}...
+            </h3>
+          </div>
+          <div className="text-right">
+            <p className="text-xs text-slate-400 font-medium">
+              Submitted: {formatDate(task.submittedAt)}
+            </p>
+            <p className="text-xs text-slate-400 font-medium">
+              Updated: {formatDate(task.updatedAt)}
+            </p>
+          </div>
+        </div>
 
-                      {/* Status Badge */}
-                      <div className="mb-4">
-                        <span className={`flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full ${
-                          task.status === 'approved' 
-                            ? 'bg-emerald-50 text-emerald-600' 
-                            : task.status === 'rejected'
-                            ? 'bg-rose-50 text-rose-600'
-                            : 'bg-amber-50 text-amber-600'
-                        }`}>
-                          {task.status === 'approved' ? (
-                            <CheckCircle2 size={14}/>
-                          ) : task.status === 'rejected' ? (
-                            <XCircle size={14}/>
-                          ) : (
-                            <Clock size={14}/>
-                          )}
-                          {task.status ? task.status.charAt(0).toUpperCase() + task.status.slice(1) : "Pending"}
-                        </span>
-                      </div>
+        {/* Status Badge and Task Info */}
+        <div className="flex items-center justify-between mb-4">
+          <span className={`flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full ${
+            task.status === 'approved' 
+              ? 'bg-emerald-50 text-emerald-600' 
+              : task.status === 'rejected'
+              ? 'bg-rose-50 text-rose-600'
+              : 'bg-amber-50 text-amber-600'
+          }`}>
+            {task.status === 'approved' ? (
+              <CheckCircle2 size={14}/>
+            ) : task.status === 'rejected' ? (
+              <XCircle size={14}/>
+            ) : (
+              <Clock size={14}/>
+            )}
+            {task.status ? task.status.charAt(0).toUpperCase() + task.status.slice(1) : "Pending"}
+          </span>
+          
+          {/* Task Price Display */}
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-slate-600">Price:</span>
+            <span className="font-bold text-slate-800">
+              <TaskPrice key={task.task} taskId={task.task} />
+            </span>
+          </div>
+        </div>
 
-                      {/* Review Link */}
-                      {task.proof?.reviewLink && (
-                        <div className="mb-4">
-                          <a
-                            href={task.proof.reviewLink}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-2 text-sm text-indigo-600 hover:text-indigo-800 hover:underline font-medium"
-                          >
-                            View Proof Link <ExternalLink size={14} />
-                          </a>
-                        </div>
-                      )}
+        {/* Task ID Display */}
+        <div className="mb-4 p-3 bg-slate-50 rounded-xl">
+          <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Task ID</p>
+          <p className="font-mono text-sm text-slate-700 break-all">{task.task || "N/A"}</p>
+        </div>
 
-                      {/* Task Metadata */}
-                      <div className="grid grid-cols-2 gap-4 text-sm mb-4">
-                        <div>
-                          <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Task ID</p>
-                          <p className="font-mono text-slate-700">{task.task || "N/A"}</p>
-                        </div>
-                        <div>
-                          <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Submitted At</p>
-                          <p className="text-slate-700">{formatDate(task.submittedAt)}</p>
-                        </div>
-                      </div>
+        {/* Review Link */}
+        {task.proof?.reviewLink && (
+          <div className="mb-4">
+            <a
+              href={task.proof.reviewLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 text-sm text-indigo-600 hover:text-indigo-800 hover:underline font-medium"
+            >
+              View Proof Link <ExternalLink size={14} />
+            </a>
+          </div>
+        )}
 
-                      {/* Action Buttons - Different based on status */}
-                      {task.status === 'pending' && (
-                        <div className="flex gap-3 pt-4 border-t border-slate-200">
-                          <button
-                            onClick={() => openApproveConfirm(task._id)}
-                            className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white py-3 rounded-xl font-bold shadow-lg transition flex items-center justify-center gap-2"
-                          >
-                            <Check size={18} />
-                            Approve Task
-                          </button>
-                          <button className="flex-1 bg-slate-200 hover:bg-slate-300 text-slate-800 py-3 rounded-xl font-bold shadow-lg transition flex items-center justify-center gap-2">
-                            <Edit size={18} />
-                            Edit
-                          </button>
-                        </div>
-                      )}
-
-                      {/* Approved Task Actions - Only delete button */}
-                      {task.status === 'approved' && (
-                        <div className="pt-4 border-t border-emerald-100">
-                          <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 mb-4">
-                            <div className="flex items-center gap-2 text-emerald-700">
-                              <CheckCircle2 size={18} />
-                              <span className="font-bold">Task Approved</span>
-                            </div>
-                            <p className="text-sm text-emerald-600 mt-1">
-                              This task has been approved on {formatDate(task.updatedAt)}
-                            </p>
-                          </div>
-                          
-                          {/* Delete button for approved tasks */}
-                          <button
-                            onClick={() => openDeleteConfirm(task._id)}
-                            className="w-full bg-rose-600 hover:bg-rose-500 text-white py-3 rounded-xl font-bold shadow-lg transition flex items-center justify-center gap-2"
-                          >
-                            <Trash2 size={18} />
-                            Delete Submission
-                          </button>
-                        </div>
-                      )}
-
-                      {/* Rejected Task Actions - Can also delete */}
-                      {task.status === 'rejected' && (
-                        <div className="pt-4 border-t border-rose-100">
-                          <div className="bg-rose-50 border border-rose-200 rounded-xl p-4 mb-4">
-                            <div className="flex items-center gap-2 text-rose-700">
-                              <XCircle size={18} />
-                              <span className="font-bold">Task Rejected</span>
-                            </div>
-                            <p className="text-sm text-rose-600 mt-1">
-                              This task was rejected on {formatDate(task.updatedAt)}
-                            </p>
-                          </div>
-                          
-                          {/* Delete button for rejected tasks */}
-                          <button
-                            onClick={() => openDeleteConfirm(task._id)}
-                            className="w-full bg-rose-600 hover:bg-rose-500 text-white py-3 rounded-xl font-bold shadow-lg transition flex items-center justify-center gap-2"
-                          >
-                            <Trash2 size={18} />
-                            Delete Submission
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  </div>
+        {/* Razorpay Button Section */}
+        <div className="mb-6 pt-4 border-t border-slate-100">
+          <div className="bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-200 rounded-xl p-4">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <CreditCard className="h-5 w-5 text-indigo-600" />
+                <h4 className="font-bold text-indigo-800">Pay for this Task</h4>
+              </div>
+              <span className="text-xs font-bold text-indigo-600 bg-indigo-100 px-3 py-1 rounded-full">
+                Task #{task.task?.substring(0, 8)}...
+              </span>
+            </div>
+            
+            <RazorpayButton
+              userId={task.user || userData?._id}
+              taskId={task.task}
+              taskSubmissionId={task._id}
+              amount={100}
+            />
+            
+            <div className="mt-3 text-xs text-slate-600 space-y-1">
+              <p className="font-medium">Payment Details:</p>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <span className="text-slate-400">Task ID:</span>
+                  <p className="font-mono truncate">{task.task?.substring(0, 16)}...</p>
                 </div>
-              ))
+                <div>
+                  <span className="text-slate-400">Submission ID:</span>
+                  <p className="font-mono truncate">{task._id?.substring(0, 16)}...</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="pt-4 border-t border-slate-200">
+          {task.status === 'pending' && (
+            <div className="flex gap-3">
+              <button
+                onClick={() => openApproveConfirm(task._id)}
+                className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white py-3 rounded-xl font-bold shadow-lg transition flex items-center justify-center gap-2"
+              >
+                <Check size={18} />
+                Approve Task
+              </button>
+              <button className="flex-1 bg-slate-200 hover:bg-slate-300 text-slate-800 py-3 rounded-xl font-bold shadow-lg transition flex items-center justify-center gap-2">
+                <Edit size={18} />
+                Edit
+              </button>
+            </div>
+          )}
+
+          {task.status === 'approved' && (
+            <div className="space-y-4">
+              <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4">
+                <div className="flex items-center gap-2 text-emerald-700">
+                  <CheckCircle2 size={18} />
+                  <span className="font-bold">Task Approved</span>
+                </div>
+                <p className="text-sm text-emerald-600 mt-1">
+                  This task has been approved on {formatDate(task.updatedAt)}
+                </p>
+              </div>
+              <button
+                onClick={() => openDeleteConfirm(task._id)}
+                className="w-full bg-rose-600 hover:bg-rose-500 text-white py-3 rounded-xl font-bold shadow-lg transition flex items-center justify-center gap-2"
+              >
+                <Trash2 size={18} />
+                Delete Submission
+              </button>
+            </div>
+          )}
+
+          {task.status === 'rejected' && (
+            <div className="space-y-4">
+              <div className="bg-rose-50 border border-rose-200 rounded-xl p-4">
+                <div className="flex items-center gap-2 text-rose-700">
+                  <XCircle size={18} />
+                  <span className="font-bold">Task Rejected</span>
+                </div>
+                <p className="text-sm text-rose-600 mt-1">
+                  This task was rejected on {formatDate(task.updatedAt)}
+                </p>
+              </div>
+              <button
+                onClick={() => openDeleteConfirm(task._id)}
+                className="w-full bg-rose-600 hover:bg-rose-500 text-white py-3 rounded-xl font-bold shadow-lg transition flex items-center justify-center gap-2"
+              >
+                <Trash2 size={18} />
+                Delete Submission
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  </div>
+))
             )}
           </div>
         </div>

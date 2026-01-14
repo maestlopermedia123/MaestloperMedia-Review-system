@@ -11,7 +11,7 @@ export default function ProfilePage() {
   const [previewUrl, setPreviewUrl] = useState('');
   const [loading, setLoading] = useState(false);
   
-  console.log('User in ProfilePage:', user);
+  // console.log('User in ProfilePage:', user);
 
   useEffect(() => {
     if (user) {

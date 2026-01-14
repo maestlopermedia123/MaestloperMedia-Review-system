@@ -69,7 +69,7 @@ export default function PremiumAdminPanel() {
           const data = await res.json();
           setUsers(data.data || []);
 
-          console.log('Fetched Users:', data.data);
+          // console.log('Fetched Users:', data.data);
 
         } catch (err) {
           console.error(err);

@@ -14,6 +14,7 @@ export default function LoginRegister() {
     name: '',
     email: '',
     password: '',
+    mobileno: '',
   });
 
   const handleChange = (e) => {
@@ -44,7 +45,7 @@ export default function LoginRegister() {
 
         // Switch to login mode after successful register
         setIsLogin(true);
-        setFormData({ name: '', email: '', password: '' });
+        setFormData({ name: '', email: '', password: '',mobileno: '' });
         return;
       }
 
@@ -132,6 +133,19 @@ export default function LoginRegister() {
                 value={formData.password}
                 onChange={handleChange}
                 placeholder="••••••••"
+                className="w-full px-6 py-4 bg-slate-50/50 border border-slate-100 rounded-2xl text-sm outline-none focus:ring-4 focus:ring-amber-400/5"
+              />
+            </div>
+            <div className="group space-y-2">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                Mobile no
+              </label>
+              <input
+                name="mobileno"
+                type="mobileno"
+                value={formData.mobileno}
+                onChange={handleChange}
+                placeholder="Mobile No"
                 className="w-full px-6 py-4 bg-slate-50/50 border border-slate-100 rounded-2xl text-sm outline-none focus:ring-4 focus:ring-amber-400/5"
               />
             </div>

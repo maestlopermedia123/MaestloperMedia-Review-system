@@ -10,7 +10,7 @@ export default function ReviewDashboard() {
   const { user, refreshUser, loading } = useAuth();
   const { tasks, loading: tasksLoading } = useTasks();
   let userId = user ? user._id : null;
-  console.log('Tasks in Dashboard:', tasks);
+  // console.log('Tasks in Dashboard:', tasks);
 
   const router = useRouter();
   const [search, setSearch] = useState('');
@@ -94,7 +94,7 @@ export default function ReviewDashboard() {
         return;
       }
 
-      console.log("Submission Success:", result);
+      // console.log("Submission Success:", result);
       
       // Add the new submission to tasksSubmitted
       const newSubmission = {
@@ -165,7 +165,7 @@ export default function ReviewDashboard() {
         submission => submission.user === userId
       ) || [];
       
-      console.log("User's task submissions:", userSubmissions);
+      // console.log("User's task submissions:", userSubmissions);
       
       setTasksSubmitted(userSubmissions);
       
@@ -217,7 +217,7 @@ export default function ReviewDashboard() {
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
           <div>
             <h1 className="text-4xl font-light text-slate-900 mb-2">Review <span className="font-bold">Console</span></h1>
-            <p className="text-slate-500 text-sm tracking-wide">Manage and evaluate your premium digital assets.</p>
+            <p className="text-slate-500 text-sm tracking-wide">India's Local Work & Earning Network</p>
           </div>
 
           {/* Controls */}
