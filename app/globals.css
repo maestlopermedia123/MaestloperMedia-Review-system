@@ -1,6 +1,7 @@
+
 @import "tailwindcss";
 
-:root {
+/* :root {
   --background: #ffffff;
   --foreground: #171717;
 }
@@ -23,4 +24,32 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+} */
+
+:root {
+  --background: #fdfdfd; /* Soft chalk white */
+  --foreground: #0f172a; /* Deep slate */
+  --accent-gold: #c5a059;
 }
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: 'Poppins', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  letter-spacing: -0.01em; /* Tightens the geometric shapes for a cleaner look */
+}
+
+/* Premium Typography Rules */
+h1, h2, h3 {
+  font-weight: 600;
+  letter-spacing: -0.03em; /* Deeper squeeze for headings */
+}
+
+p {
+  font-weight: 400;
+  line-height: 1.6;
+  color: #64748b; /* Muted slate for body text improves readability */
+}
+
