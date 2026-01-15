@@ -36,7 +36,7 @@ export default function UserDetailPage({ params }) {
   const [userData, setUserData] = useState(null);
   const [tasks, setTasks] = useState([]);
   // const [priceMap, setPriceMap] = useState({});
-
+  console.log("totale amount",transferAmount);
   const [loading, setLoading] = useState(true);
   const [sendingFunds, setSendingFunds] = useState(false);
   const [counter, setCounter] = useState(0);
@@ -49,12 +49,12 @@ export default function UserDetailPage({ params }) {
   const [showQRCode, setShowQRCode] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
   const [showRazorpayOption, setShowRazorpayOption] = useState(false);
-  
+  const [amount, setAmount] = useState(0);
   const resolvedParams = use(params); 
   const userId = resolvedParams.id;
 
 
-  // console.log('Tasks in UserDetailPage:', tasks); 
+  console.log('Tasks in UserDetailPage:', userData); 
   // Fetch user details
   useEffect(() => {
     const fetchUserData = async () => {
@@ -393,7 +393,11 @@ export default function UserDetailPage({ params }) {
                 <Mail size={16} />
                 {userData.email || "No email"}
               </div>
-              
+              <div className="space-y-4">
+                <div className="flex items-center justify-center gap-2">
+                 <p> Mobile Number:{userData.phone || "N/A"}</p>
+                </div>
+                </div>
               <div className="grid grid-cols-2 gap-4 border-t border-slate-100 pt-6 text-left">
                 <div>
                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Tasks Done</p>
@@ -748,7 +752,7 @@ tasks.map((task) => (
           <div className="flex items-center gap-2">
             <span className="text-sm text-slate-600">Price:</span>
             <span className="font-bold text-slate-800">
-              <TaskPrice key={task.task} taskId={task.task} />
+              <TaskPrice key={task.task} taskId={task.task }  onPrice={(value) => setAmount(value)}  />
             </span>
           </div>
         </div>
@@ -790,7 +794,7 @@ tasks.map((task) => (
               userId={task.user || userData?._id}
               taskId={task.task}
               taskSubmissionId={task._id}
-              amount={100}
+              amount={amount}
             />
             
             <div className="mt-3 text-xs text-slate-600 space-y-1">

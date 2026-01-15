@@ -122,7 +122,7 @@ export default function RazorpayButton({
       onClick={handlePayment}
       className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold transition-colors"
     >
-      Pay ₹{amount}
+      Pay {amount}
     </button>
   );
 }

@@ -1,34 +1,189 @@
 'use client';
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { useAuth } from '@/context/AuthContext';
 
 export default function WalletPage() {
+  const { user, refreshUser, loading } = useAuth();
+  const [transactions, setTransactions] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [totalEarnings, setTotalEarnings] = useState(0);
+
+  // Fetch transactions when user is available
+  useEffect(() => {
+    if (!user?._id) return;
+
+    const fetchTransactions = async () => {
+      setIsLoading(true);
+      setError(null);
+
+      try {
+        const res = await fetch(`/api/transaction/${user._id}`);
+
+        if (!res.ok) {
+          throw new Error(`Failed to fetch transactions: ${res.status}`);
+        }
+
+        const result = await res.json();
+        const transactions = result.data || [];
+
+        setTransactions(transactions);
+
+        // Calculate total money received (all positive amounts)
+        const totalReceived = transactions.reduce((total, tx) => {
+          const amount = Number(tx.amount) || 0;
+          // Since all transactions are money received, just add them all
+          return total + Math.abs(amount); // Use absolute value to ensure positive
+        }, 0);
+
+        setTotalEarnings(totalReceived);
+      } catch (err) {
+        console.error(err);
+        setError(err.message);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchTransactions();
+  }, [user?._id]);
+
+  // Format currency
+  const formatCurrency = (amount) => {
+    return new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 2
+    }).format(amount);
+  };
+
+  // Format date
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-IN', {
+      day: 'numeric',
+      month: 'short',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  // Filter transactions - all are money received
+  const allTransactions = transactions; // All transactions show money received
+  
+  // Calculate today's earnings
+  const todayEarnings = allTransactions
+    .filter(t => {
+      const transactionDate = new Date(t.createdAt);
+      const today = new Date();
+      return transactionDate.toDateString() === today.toDateString();
+    })
+    .reduce((sum, t) => sum + Math.abs(parseFloat(t.amount) || 0), 0);
+
+  // Calculate monthly earnings
+  const currentMonth = new Date().getMonth();
+  const currentYear = new Date().getFullYear();
+  
+  const monthlyEarnings = allTransactions
+    .filter(t => {
+      const transactionDate = new Date(t.createdAt);
+      return transactionDate.getMonth() === currentMonth && 
+             transactionDate.getFullYear() === currentYear;
+    })
+    .reduce((sum, t) => sum + Math.abs(parseFloat(t.amount) || 0), 0);
+
+  // Get recent transactions (last 10)
+  const recentTransactions = allTransactions.slice(0, 10);
+
+  if (loading || isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#FDFDFD]">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-emerald-500"></div>
+          <p className="mt-4 text-sm text-slate-500">Loading earnings data...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#FDFDFD]">
+        <div className="text-center p-8 bg-white rounded-3xl shadow-lg border border-slate-100 max-w-md">
+          <div className="text-red-500 text-4xl mb-4">⚠️</div>
+          <h3 className="text-lg font-bold text-slate-800 mb-2">Error Loading Data</h3>
+          <p className="text-sm text-slate-600 mb-4">{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-6 py-2 bg-emerald-600 text-white text-sm font-semibold rounded-xl hover:bg-emerald-700 transition-colors"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-[#FDFDFD] font-['Poppins'] text-slate-900 pb-20">
+    <div className="min-h-screen bg-gradient-to-b from-emerald-50 to-white font-['Poppins'] text-slate-900 pb-20">
       
-      {/* 1. TOP HEADER SECTION (INR FOCUS) */}
-      <div className="bg-slate-900 pt-32 pb-40 px-8 relative overflow-hidden">
-        <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#c5a059_1px,transparent_1px)] [background-size:30px_30px]"></div>
-        
-        <div className="max-w-5xl mx-auto relative z-10 text-center md:text-left">
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
+      {/* 1. TOP HEADER SECTION - TOTAL MONEY RECEIVED */}
+      <div className="relative overflow-hidden bg-gradient-to-br from-teal-700 via-teal-800 to-cyan-900 pt-28 pb-36 px-6 sm:px-10">
+        {/* subtle background pattern */}
+        <div className="absolute inset-0 opacity-[0.08] bg-[radial-gradient(#ffffff_1px,transparent_1px)] [background-size:32px_32px]" />
+
+        <div className="relative z-10 max-w-6xl mx-auto">
+          <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-10">
+
+            {/* LEFT */}
             <div>
-              <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-amber-500 mb-2">Available Balance</h3>
-              <h1 className="text-5xl md:text-7xl font-bold text-white tracking-tighter italic">
-                ₹8,42,580<span className="text-amber-500 opacity-50 text-3xl">.00</span>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.35em] text-cyan-200 mb-3">
+                Total Earnings
+              </p>
+
+              <h1 className="flex items-end gap-2 text-white font-extrabold tracking-tight">
+                <span className="text-5xl sm:text-6xl lg:text-7xl">
+                  {formatCurrency(totalEarnings).replace('₹', '').split('.')[0]}
+                </span>
+                <span className="text-2xl sm:text-3xl text-cyan-300 mb-2">
+                  {formatCurrency(totalEarnings).includes('.')
+                    ? '.' + formatCurrency(totalEarnings).split('.')[1]
+                    : '.00'}
+                </span>
               </h1>
+
+              <div className="mt-5 flex flex-wrap items-center gap-4">
+                <span className="inline-flex items-center gap-2 rounded-full bg-white/15 px-4 py-1.5 text-[11px] font-semibold text-white backdrop-blur">
+                  💳 Direct Bank Transfer
+                </span>
+                <p className="text-sm text-cyan-100/90">
+                  Payments are credited securely to your bank account
+                </p>
+              </div>
             </div>
-            
-            <div className="flex gap-4 justify-center">
-              <button className="px-10 py-4 bg-amber-500 text-slate-900 text-[11px] font-black uppercase tracking-[0.2em] rounded-2xl hover:bg-amber-400 transition-all shadow-xl shadow-amber-500/20">
-                Add Funds
-              </button>
-              <button className="px-10 py-4 bg-transparent border border-white/20 text-white text-[11px] font-black uppercase tracking-[0.2em] rounded-2xl hover:bg-white/10 transition-all">
-                Withdraw
-              </button>
+
+            {/* RIGHT */}
+            <div className="flex justify-start lg:justify-end">
+              <div className="rounded-2xl border border-white/20 bg-white/10 backdrop-blur-md px-10 py-5">
+                <div className="flex items-center gap-3 text-white">
+                  <span className="text-lg">✅</span>
+                  <div>
+                    <p className="text-xs uppercase tracking-widest text-cyan-200">
+                      Status
+                    </p>
+                    <p className="text-sm font-semibold">
+                      Money Received
+                    </p>
+                  </div>
+                </div>
+              </div>
             </div>
+
           </div>
         </div>
       </div>
+
 
       {/* 2. MAIN CONTENT AREA */}
       <main className="max-w-5xl mx-auto px-8 -mt-24 relative z-20">
@@ -36,83 +191,216 @@ export default function WalletPage() {
           
           {/* EARNINGS & INCOME ANALYSIS */}
           <div className="lg:col-span-2 space-y-8">
-            <div className="bg-white border border-slate-100 rounded-[2.5rem] p-10 shadow-[0_20px_50px_rgba(0,0,0,0.04)]">
+            <div className="bg-white border border-emerald-100 rounded-[2.5rem] p-10 shadow-[0_20px_50px_rgba(6,95,70,0.08)]">
               <div className="flex items-center justify-between mb-12">
                 <div>
-                  <h2 className="text-sm font-black uppercase tracking-widest text-slate-400">Review Earnings</h2>
+                  <h2 className="text-sm font-black uppercase tracking-widest text-emerald-600">Today's Receipts</h2>
                   <div className="flex items-center gap-2 mt-2">
-                    <span className="text-2xl font-bold text-slate-900">+₹5.24</span>
+                    <span className="text-2xl font-bold text-slate-900">+{formatCurrency(todayEarnings)}</span>
                     <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest bg-emerald-50 px-2 py-1 rounded-md">
-                      Today's Credit
+                      Received Today
                     </span>
                   </div>
-                  <p className="text-[11px] text-slate-400 mt-1">Based on your recent product reviews history</p>
+                  <p className="text-[11px] text-slate-500 mt-1">
+                    Money received in your bank account today
+                  </p>
                 </div>
 
                 {/* Animated Trend Graph (CSS only) */}
                 <div className="flex items-end gap-1.5 h-12">
-                   {[30, 50, 40, 70, 45, 90, 65, 80, 55, 100].map((h, i) => (
-                     <div key={i} className="w-1.5 bg-slate-900/5 rounded-full relative overflow-hidden h-full">
+                  {allTransactions.slice(0, 10).map((transaction, i) => {
+                    const amount = Math.abs(parseFloat(transaction.amount) || 0);
+                    const maxAmount = Math.max(...allTransactions.slice(0, 10).map(t => Math.abs(parseFloat(t.amount) || 0)));
+                    const height = maxAmount > 0 ? (amount / maxAmount) * 100 : 0;
+                    
+                    return (
+                      <div key={i} className="w-1.5 bg-emerald-900/5 rounded-full relative overflow-hidden h-full">
                         <div 
-                          className="absolute bottom-0 left-0 w-full bg-amber-400 rounded-full transition-all duration-1000 ease-out"
-                          style={{ height: `${h}%` }}
+                          className="absolute bottom-0 left-0 w-full bg-emerald-500 rounded-full transition-all duration-1000 ease-out"
+                          style={{ height: `${height}%` }}
                         ></div>
-                     </div>
-                   ))}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
               
               <div className="space-y-4">
-                <IncomeMetric label="Base Review Reward" amount="₹2.00" date="10:45 AM" />
-                <IncomeMetric label="Quality Bonus (5★ Review)" amount="₹3.24" date="02:15 PM" />
-                <div className="pt-4 mt-4 border-t border-slate-50 flex justify-between items-center">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Total for January 2026</span>
-                  <span className="text-sm font-bold text-slate-900">₹1,450.00</span>
+                {allTransactions.slice(0, 3).map((transaction, index) => (
+                  <IncomeMetric 
+                    key={transaction._id}
+                    label={transaction.description || `Money Received`}
+                    amount={`+${formatCurrency(Math.abs(transaction.amount))}`}
+                    date={formatDate(transaction.createdAt)}
+                    icon="💰"
+                  />
+                ))}
+                
+                <div className="pt-4 mt-4 border-t border-emerald-50 flex justify-between items-center">
+                  <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest">
+                    Total Received in {new Date().toLocaleDateString('en-IN', { month: 'long', year: 'numeric' })}
+                  </span>
+                  <span className="text-sm font-bold text-emerald-700">+{formatCurrency(monthlyEarnings)}</span>
                 </div>
               </div>
             </div>
 
-            {/* RECENT TRANSACTION LOGS */}
-            <div className="bg-white border border-slate-100 rounded-[2.5rem] p-10 shadow-sm">
-              <h2 className="text-sm font-black uppercase tracking-widest text-slate-400 mb-8">Transaction Log</h2>
+            {/* MONEY RECEIVED HISTORY */}
+            <div className="bg-white border border-emerald-100 rounded-[2.5rem] p-10 shadow-[0_20px_50px_rgba(6,95,70,0.05)]">
+              <div className="flex items-center justify-between mb-8">
+                <div>
+                  <h2 className="text-sm font-black uppercase tracking-widest text-emerald-600">Money Received History</h2>
+                  <p className="text-[11px] text-slate-500 mt-1">All amounts transferred to your bank account</p>
+                </div>
+                <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full">
+                  {allTransactions.length} receipts
+                </span>
+              </div>
+              
               <div className="space-y-1">
-                <TransactionRow name="Payment to Aurum Merchant" date="05 Jan" amount="-₹1,200" status="Success" />
-                <TransactionRow name="Review Credit: Product #992" date="04 Jan" amount="+₹5.24" status="Credit" />
-                <TransactionRow name="Bank Withdrawal (HDFC)" date="02 Jan" amount="-₹15,000" status="Processing" />
+                {recentTransactions.length > 0 ? (
+                  recentTransactions.map((transaction) => (
+                    <TransactionRow
+                      key={transaction._id}
+                      name={transaction.description || 'Money Received'}
+                      date={formatDate(transaction.createdAt)}
+                      amount={`+${formatCurrency(Math.abs(transaction.amount))}`}
+                      status={
+                        transaction.status === 'completed' ? 'Success' :
+                        transaction.status === 'pending' ? 'Processing' :
+                        transaction.status === 'failed' ? 'Failed' : 'Received'
+                      }
+                      icon="💰"
+                    />
+                  ))
+                ) : (
+                  <div className="text-center py-10">
+                    <div className="text-4xl mb-4 opacity-20">💳</div>
+                    <p className="text-sm text-slate-500">No money receipts yet</p>
+                    <p className="text-xs text-slate-400 mt-1">Start earning to receive money in your bank</p>
+                  </div>
+                )}
+              </div>
+              
+              {allTransactions.length > 10 && (
+                <div className="mt-8 text-center">
+                  <button className="px-6 py-2 text-sm text-emerald-600 hover:text-emerald-700 font-medium border border-emerald-200 rounded-xl hover:border-emerald-300 transition-colors">
+                    View All Receipts ({allTransactions.length})
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* RIGHT SIDEBAR - STATISTICS */}
+          <div className="space-y-8">
+            {/* EARNINGS SUMMARY */}
+            <div className="bg-white border border-emerald-100 rounded-[2.5rem] p-8 shadow-[0_20px_50px_rgba(6,95,70,0.05)]">
+              <h4 className="text-[10px] font-black uppercase tracking-widest text-emerald-600 mb-6">Receipts Summary</h4>
+              
+              <div className="space-y-4">
+                <StatItem 
+                  label="Total Money Received" 
+                  value={`+${formatCurrency(totalEarnings)}`}
+                  color="text-emerald-700"
+                  count={allTransactions.length}
+                  icon="💰"
+                />
+                <StatItem 
+                  label="This Month" 
+                  value={`+${formatCurrency(monthlyEarnings)}`}
+                  color="text-emerald-600"
+                  count={allTransactions.filter(t => {
+                    const date = new Date(t.createdAt);
+                    return date.getMonth() === currentMonth && date.getFullYear() === currentYear;
+                  }).length}
+                  icon="📅"
+                />
+                <StatItem 
+                  label="Today" 
+                  value={`+${formatCurrency(todayEarnings)}`}
+                  color="text-emerald-500"
+                  count={allTransactions.filter(t => {
+                    const date = new Date(t.createdAt);
+                    const today = new Date();
+                    return date.toDateString() === today.toDateString();
+                  }).length}
+                  icon="🌞"
+                />
+              </div>
+            </div>
+
+            {/* BANK TRANSFER INFO */}
+            <div className="bg-gradient-to-br from-emerald-50 to-white border border-emerald-200 rounded-[2.5rem] p-8 shadow-sm">
+              <h4 className="text-[10px] font-black uppercase tracking-widest text-emerald-700 mb-6">💳 Bank Transfer</h4>
+              
+              <div className="space-y-4">
+                <div className="p-4 bg-white/50 rounded-xl border border-emerald-100">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-xs font-bold text-slate-800">Direct Bank Transfer</p>
+                      <p className="text-[10px] text-emerald-600">All earnings go directly to your bank</p>
+                    </div>
+                    <div className="text-emerald-600 text-xl">🏦</div>
+                  </div>
+                </div>
+                
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center">
+                      <span className="text-emerald-600 text-sm">✓</span>
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-slate-800">Instant Processing</p>
+                      <p className="text-[10px] text-slate-600">Money transferred within 24 hours</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center">
+                      <span className="text-emerald-600 text-sm">✓</span>
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-slate-800">Zero Fees</p>
+                      <p className="text-[10px] text-slate-600">No charges for bank transfers</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center">
+                      <span className="text-emerald-600 text-sm">✓</span>
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-slate-800">Secure & Safe</p>
+                      <p className="text-[10px] text-slate-600">Bank-level security for all transfers</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* RECENT RECEIPTS */}
+            <div className="bg-white border border-emerald-100 rounded-[2.5rem] p-8 shadow-sm">
+              <h4 className="text-[10px] font-black uppercase tracking-widest text-emerald-600 mb-6">Recent Receipts</h4>
+              
+              <div className="space-y-3">
+                {recentTransactions.slice(0, 4).map((transaction) => (
+                  <div key={transaction._id} className="flex items-center gap-3 p-3 rounded-xl hover:bg-emerald-50/50 transition-colors">
+                    <div className="w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center text-emerald-600">
+                      💰
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-medium text-slate-800 truncate">Money Received</p>
+                      <p className="text-[10px] text-slate-400">{formatDate(transaction.createdAt)}</p>
+                    </div>
+                    <span className="text-xs font-bold text-emerald-600 whitespace-nowrap">
+                      +{formatCurrency(Math.abs(transaction.amount))}
+                    </span>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
-
-          {/* RIGHT SIDEBAR */}
-          <div className="space-y-8">
-            {/* SAVINGS CARD */}
-            <div className="bg-slate-900 rounded-[2.5rem] p-8 text-white relative overflow-hidden">
-               <div className="absolute top-0 right-0 p-6">
-                 <div className="w-10 h-10 border border-white/10 rounded-full flex items-center justify-center">
-                    <span className="text-amber-500 text-xs">₹</span>
-                 </div>
-               </div>
-               <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 mb-8">Saving Vaults</h4>
-               <p className="text-3xl font-bold mb-1">₹45,000</p>
-               <p className="text-[10px] text-emerald-400 font-bold uppercase tracking-widest mb-8">6.5% Annual Interest</p>
-               <button className="w-full py-3 bg-white/5 border border-white/10 rounded-xl text-[10px] font-bold uppercase tracking-widest hover:bg-white/10 transition-all">
-                 View Breakdown
-               </button>
-            </div>
-
-            {/* QUICK LINK CARD */}
-            <div className="bg-white border border-slate-100 rounded-[2.5rem] p-8 shadow-sm">
-               <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-6">Linked Account</h4>
-               <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                  <div className="w-10 h-10 bg-slate-900 rounded-xl flex items-center justify-center text-white text-[10px] font-bold">HDFC</div>
-                  <div>
-                    <p className="text-xs font-bold text-slate-900">HDFC Savings</p>
-                    <p className="text-[9px] text-slate-400 uppercase tracking-widest">**** 9012</p>
-                  </div>
-               </div>
-            </div>
-          </div>
-
         </div>
       </main>
     </div>
@@ -121,12 +409,17 @@ export default function WalletPage() {
 
 // --- HELPER COMPONENTS ---
 
-function IncomeMetric({ label, amount, date }) {
+function IncomeMetric({ label, amount, date, icon }) {
   return (
-    <div className="flex items-center justify-between p-4 rounded-2xl border border-slate-50 hover:bg-slate-50/50 transition-all group">
-      <div className="flex flex-col">
-        <span className="text-xs font-bold text-slate-700">{label}</span>
-        <span className="text-[9px] text-slate-400 uppercase tracking-widest">{date}</span>
+    <div className="flex items-center justify-between p-4 rounded-2xl border border-emerald-50 hover:bg-emerald-50/30 transition-all group">
+      <div className="flex items-center gap-3">
+        <div className="w-10 h-10 bg-emerald-100 rounded-xl flex items-center justify-center text-emerald-600">
+          {icon || '💰'}
+        </div>
+        <div className="flex flex-col">
+          <span className="text-xs font-bold text-slate-700">{label}</span>
+          <span className="text-[9px] text-emerald-500 uppercase tracking-widest">{date}</span>
+        </div>
       </div>
       <span className="text-sm font-bold text-emerald-600 group-hover:scale-110 transition-transform">
         {amount}
@@ -135,23 +428,48 @@ function IncomeMetric({ label, amount, date }) {
   );
 }
 
-function TransactionRow({ name, date, amount, status }) {
+function TransactionRow({ name, date, amount, status, icon }) {
   return (
-    <div className="flex items-center justify-between py-5 border-b border-slate-50 last:border-0">
+    <div className="flex items-center justify-between py-5 border-b border-emerald-50 last:border-0 hover:bg-emerald-50/30 transition-colors">
       <div className="flex items-center gap-4">
-        <div className="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center text-slate-400 text-xs font-bold">
-          {date.split(' ')[0]}
+        <div className="w-10 h-10 bg-emerald-100 rounded-xl flex items-center justify-center text-emerald-600">
+          {icon || '💰'}
         </div>
         <div>
-          <p className="text-xs font-bold text-slate-800">{name}</p>
-          <p className={`text-[9px] font-bold uppercase tracking-widest ${
-            status === 'Success' ? 'text-emerald-500' : status === 'Processing' ? 'text-amber-500' : 'text-slate-400'
-          }`}>{status}</p>
+          <p className="text-xs font-bold text-slate-800 truncate max-w-[200px]">{name}</p>
+          <div className="flex items-center gap-2 mt-1">
+            <p className="text-[9px] text-emerald-500">{date}</p>
+            <p className={`text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 rounded ${
+              status === 'Success' || status === 'Received' ? 'bg-emerald-50 text-emerald-500' : 
+              status === 'Processing' ? 'bg-amber-50 text-amber-500' : 
+              status === 'Failed' ? 'bg-rose-50 text-rose-500' : 
+              'bg-slate-50 text-slate-400'
+            }`}>
+              {status}
+            </p>
+          </div>
         </div>
       </div>
-      <p className={`text-sm font-bold ${amount.startsWith('+') ? 'text-emerald-600' : 'text-slate-900'}`}>
+      <p className="text-sm font-bold text-emerald-600">
         {amount}
       </p>
+    </div>
+  );
+}
+
+function StatItem({ label, value, color, count, icon }) {
+  return (
+    <div className="flex items-center justify-between p-3 rounded-xl border border-emerald-100 hover:bg-emerald-50/30 transition-colors">
+      <div className="flex items-center gap-3">
+        <div className="text-lg">{icon || '💰'}</div>
+        <div>
+          <p className="text-xs font-medium text-slate-700">{label}</p>
+          <p className="text-[10px] text-emerald-500">{count} receipt{count !== 1 ? 's' : ''}</p>
+        </div>
+      </div>
+      <div className="text-right">
+        <p className={`text-sm font-bold ${color}`}>{value}</p>
+      </div>
     </div>
   );
 }

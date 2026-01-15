@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 
-function TaskPrice({ taskId }) {
+function TaskPrice({ taskId, onPrice  }) {
   const [price, setPrice] = useState(null);
 
   useEffect(() => {
@@ -14,6 +14,7 @@ function TaskPrice({ taskId }) {
 
         if (json.success) {
           setPrice(json.data.price);
+          onPrice(json.data.price);
         } else {
           console.error(json.message);
         }
