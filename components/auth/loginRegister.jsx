@@ -73,7 +73,7 @@ export default function LoginRegister() {
           {/* Header */}
           <div className="text-center mb-10">
                <div className="flex items-center justify-center mb-6">
-                  <div className="relative w-20 h-20 sm:w-24 sm:h-24">
+                  <div className="relative w-32 h-32 sm:w-40 sm:h-40">
                     <Image
                       src="/Har-Ghar-Rozgaar.png"
                       alt="Har Ghar Rozgaar Logo"

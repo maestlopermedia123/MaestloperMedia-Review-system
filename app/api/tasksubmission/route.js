@@ -1,18 +1,21 @@
-import { NextResponse } from 'next/server';
-import { writeFile } from 'fs/promises';
-import path from 'path';
-import fs from 'fs'; // Adjust path
-import { connectDB } from '@/utils/db';
-import TaskSubmission from '@/models/TaskSubmission'; // Adjust path
-
+import { NextResponse } from "next/server";
+import { connectDB } from "@/utils/db";
+import TaskSubmission from "@/models/TaskSubmission";
 import mongoose from "mongoose";
+import { v2 as cloudinary } from "cloudinary";
+
+// 🔐 Cloudinary config
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
 
 export async function POST(req) {
   try {
     await connectDB();
 
     const contentType = req.headers.get("content-type");
-
     if (!contentType?.includes("multipart/form-data")) {
       return NextResponse.json(
         { success: false, message: "multipart/form-data required" },
@@ -23,16 +26,12 @@ export async function POST(req) {
     const formData = await req.formData();
 
     const userId = formData.get("user");
-    const userIdObjectId = new mongoose.Types.ObjectId(userId);
     const task = formData.get("task");
     const companyname = formData.get("username");
-    // console.log('userId:', userId);
     const reviewLink = formData.get("reviewLink");
     const file = formData.get("screenshot");
 
-
-    // 🔐 Validate required fields
-    if (!task || !userIdObjectId || !file) {
+    if (!task || !userId || !file) {
       return NextResponse.json(
         { success: false, message: "Task, User & Screenshot are required" },
         { status: 400 }
@@ -41,7 +40,7 @@ export async function POST(req) {
 
     if (
       !mongoose.Types.ObjectId.isValid(task) ||
-      !mongoose.Types.ObjectId.isValid(userIdObjectId)
+      !mongoose.Types.ObjectId.isValid(userId)
     ) {
       return NextResponse.json(
         { success: false, message: "Invalid task or user ID" },
@@ -49,29 +48,30 @@ export async function POST(req) {
       );
     }
 
-    // 📂 Ensure /media folder exists at ROOT
-    const mediaDir = path.join(process.cwd(),"public","media");
-    if (!fs.existsSync(mediaDir)) {
-      fs.mkdirSync(mediaDir, { recursive: true });
-    }
+    // 🖼️ Convert file → buffer
+    const buffer = Buffer.from(await file.arrayBuffer());
 
-    // 🖼️ Save image
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
+    // ☁️ Upload to Cloudinary
+    const uploadResult = await new Promise((resolve, reject) => {
+      cloudinary.uploader.upload_stream(
+        {
+          folder: "task-submissions",
+          resource_type: "image",
+        },
+        (error, result) => {
+          if (error) reject(error);
+          else resolve(result);
+        }
+      ).end(buffer);
+    });
 
-    const ext = path.extname(file.name);
-    const filename = `screenshot-${Date.now()}${ext}`;
-    const filePath = path.join(mediaDir, filename);
+    // 🌐 Cloudinary URL
+    const screenshotUrl = uploadResult.secure_url;
 
-    await writeFile(filePath, buffer);
-
-    // 🌐 URL stored in DB
-    const screenshotUrl = `/media/${filename}`;
-
-    // 🧾 Create DB document (MATCHES MODEL EXACTLY)
+    // 🧾 Save submission
     const submission = await TaskSubmission.create({
       task,
-      user:userIdObjectId,
+      user: new mongoose.Types.ObjectId(userId),
       companyname,
       proof: {
         screenshotUrl,
@@ -85,9 +85,9 @@ export async function POST(req) {
       { success: true, data: submission },
       { status: 201 }
     );
+
   } catch (error) {
     console.error("Task submission error:", error);
-
     return NextResponse.json(
       { success: false, message: error.message },
       { status: 500 }
@@ -95,22 +95,14 @@ export async function POST(req) {
   }
 }
 
-
-
-
 /* ✅ GET ALL TASKS */
 export async function GET() {
   try {
     await connectDB();
-
     const tasks = await TaskSubmission.find().sort({ createdAt: -1 });
-
-    return Response.json(
-      { success: true, data: tasks },
-      { status: 200 }
-    );
+    return NextResponse.json({ success: true, data: tasks });
   } catch (error) {
-    return Response.json(
+    return NextResponse.json(
       { success: false, message: error.message },
       { status: 500 }
     );
