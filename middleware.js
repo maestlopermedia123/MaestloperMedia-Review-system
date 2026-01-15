@@ -3,14 +3,19 @@ import { jwtVerify } from "jose";
 
 const secret = new TextEncoder().encode(process.env.JWT_SECRET);
 
+// file extensions to allow
+const PUBLIC_FILE = /\.(.*)$/;
+
 export async function middleware(request) {
   const { pathname } = request.nextUrl;
 
+  // ✅ Allow public files (images, fonts, etc.)
   if (
+    PUBLIC_FILE.test(pathname) ||
+    pathname.startsWith("/_next") ||
+    pathname.startsWith("/api/auth") ||
     pathname.startsWith("/login") ||
     pathname.startsWith("/register") ||
-    pathname.startsWith("/api/auth") ||
-    pathname.startsWith("/_next") ||
     pathname === "/favicon.ico"
   ) {
     return NextResponse.next();
@@ -38,5 +43,5 @@ function redirectToLogin(request) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
+  matcher: ["/((?!_next/static|_next/image).*)"],
 };
