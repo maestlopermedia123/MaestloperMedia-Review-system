@@ -1,5 +1,5 @@
 'use client';
-import React, { use, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 
 export default function ProfilePage() {
@@ -7,12 +7,12 @@ export default function ProfilePage() {
   const [userName, setUserName] = useState('');
   const [email, setEmail] = useState('');
   const [isEditing, setIsEditing] = useState(false);
-  const [file, setFile] = useState(null);
+  const [profileFile, setProfileFile] = useState(null);
+  const [qrFile, setQrFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState('');
   const [loading, setLoading] = useState(false);
+  const [qrPreview, setQrPreview] = useState('');
   
-  // console.log('User in ProfilePage:', user);
-
   useEffect(() => {
     if (user) {
       setUserName(user.name || '');
@@ -29,26 +29,23 @@ export default function ProfilePage() {
     }
   }, [user]);
 
-  const handleFileChange = (e) => {
+  const handleProfileFileChange = (e) => {
     const selectedFile = e.target.files[0];
     
     if (!selectedFile) return;
 
-    // Validate file type
     if (!selectedFile.type.startsWith('image/')) {
       alert('Please upload an image file (JPG, PNG, etc.)');
       return;
     }
 
-    // Validate file size (max 5MB)
     if (selectedFile.size > 5 * 1024 * 1024) {
       alert('File size should be less than 5MB');
       return;
     }
 
-    setFile(selectedFile);
+    setProfileFile(selectedFile);
     
-    // Create preview URL
     const reader = new FileReader();
     reader.onloadend = () => {
       setPreviewUrl(reader.result);
@@ -56,10 +53,35 @@ export default function ProfilePage() {
     reader.readAsDataURL(selectedFile);
   };
 
+  const handleQrFileChange = (e) => {
+    const selectedFile = e.target.files[0];
+    
+    if (!selectedFile) return;
+
+    if (!selectedFile.type.startsWith('image/')) {
+      alert('Please upload an image file (JPG, PNG, etc.)');
+      return;
+    }
+
+    if (selectedFile.size > 5 * 1024 * 1024) {
+      alert('File size should be less than 5MB');
+      return;
+    }
+
+    setQrFile(selectedFile);
+    
+    // Create preview for QR code
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setQrPreview(reader.result);
+    };
+    reader.readAsDataURL(selectedFile);
+  };
+
   const handleProfileImageUpload = async (e) => {
     e.preventDefault();
     
-    if (!file) {
+    if (!profileFile) {
       alert('Please select an image first');
       return;
     }
@@ -72,7 +94,7 @@ export default function ProfilePage() {
     setLoading(true);
     try {
       const formData = new FormData();
-      formData.append('profileImage', file);
+      formData.append('profileImage', profileFile);
       
       const response = await fetch(`/api/users/profile-image?id=${user._id}`, {
         method: 'PUT',
@@ -86,12 +108,11 @@ export default function ProfilePage() {
       const result = await response.json();
       alert('Profile image updated successfully!');
       
-      // Update preview with new image URL if returned
       if (result.imageUrl) {
         setPreviewUrl(result.imageUrl);
       }
       
-      setFile(null);
+      setProfileFile(null);
     } catch (error) {
       console.error('Error uploading image:', error);
       alert('Error uploading image. Please try again.');
@@ -103,7 +124,7 @@ export default function ProfilePage() {
   const handleQRUpload = async (e) => {
     e.preventDefault();
     
-    if (!file) {
+    if (!qrFile) {
       alert('Please select a QR code image first');
       return;
     }
@@ -116,7 +137,7 @@ export default function ProfilePage() {
     setLoading(true);
     try {
       const formData = new FormData();
-      formData.append('qr', file);
+      formData.append('qr', qrFile);
       
       const response = await fetch(`/api/users/qr?id=${user._id}`, {
         method: 'PUT',
@@ -129,7 +150,9 @@ export default function ProfilePage() {
 
       const result = await response.json();
       alert('QR code uploaded successfully!');
-      setFile(null);
+      
+      // Keep the preview after successful upload
+      setQrFile(null);
     } catch (error) {
       console.error('Error uploading QR code:', error);
       alert('Error uploading QR code. Please try again.');
@@ -141,80 +164,57 @@ export default function ProfilePage() {
   return (
     <div className="min-h-screen bg-[#FDFDFD] text-slate-900 font-sans">
       {/* HEADER SECTION */}
- <div className="bg-gradient-to-r from-slate-900 to-slate-800 h-64 relative">
-    <div className="max-w-5xl mx-auto px-8 h-full flex items-end">
-      <div className="translate-y-16 flex flex-col md:flex-row md:items-end gap-6 w-full">
-        {/* Avatar with Upload Functionality */}
-        <div className="relative group">
-          <form onSubmit={handleProfileImageUpload} className="w-32 h-32">
-            <label htmlFor="profile-image-upload" className="cursor-pointer">
-              <div className="w-32 h-32 rounded-2xl bg-white p-1 shadow-2xl">
-                <div className="w-full h-full rounded-xl bg-slate-200 flex items-center justify-center text-3xl font-light text-slate-400 overflow-hidden relative">
-                  {previewUrl ? (
-                    <img 
-                      src={previewUrl} 
-                      alt="Profile" 
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="text-4xl font-light text-slate-600">
-                      {userName ? userName.charAt(0).toUpperCase() : 'U'}
-                    </div>
-                  )}
-                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                    <span className="text-white text-xs font-bold tracking-widest uppercase">Change</span>
+      <div className="bg-gradient-to-r from-slate-900 to-slate-800 h-64 relative">
+        <div className="max-w-5xl mx-auto px-8 h-full flex items-end">
+          <div className="translate-y-16 flex flex-col md:flex-row md:items-end gap-6 w-full">
+            {/* Avatar Section - No upload functionality */}
+            <div className="relative">
+              <div className="w-32 h-32">
+                <div className="w-32 h-32 rounded-2xl bg-white p-1 shadow-2xl">
+                  <div className="w-full h-full rounded-xl bg-slate-200 flex items-center justify-center text-3xl font-light text-slate-400 overflow-hidden">
+                    {previewUrl ? (
+                      <img 
+                        src={previewUrl} 
+                        alt="Profile" 
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="text-4xl font-light text-slate-600">
+                        {userName ? userName.charAt(0).toUpperCase() : 'U'}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
-            </label>
-            <input 
-              id="profile-image-upload"
-              type="file" 
-              accept="image/*"
-              onChange={handleFileChange}
-              className="hidden"
-            />
-            {file && (
+            </div>
+
+            {/* User Info Section */}
+            <div className="flex-1 pb-4">
+              <h1 className="text-3xl font-bold text-white mb-6 drop-shadow-md">{userName || 'User Profile'}</h1>
+              <p className="text-slate-200 text-sm tracking-wide flex items-center gap-2  mb-6">
+                <span className="w-2 h-2 bg-emerald-400 rounded-full shadow-sm"></span>
+                Account Active • Verified Member
+              </p>
+            </div>
+
+            {/* Edit Profile Button */}
+            <div className="pb-4 flex gap-3">
               <button 
-                type="submit"
-                disabled={loading}
-                className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 text-xs bg-amber-500 text-white px-3 py-1 rounded-full hover:bg-amber-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
+                onClick={() => setIsEditing(!isEditing)}
+                className="px-6 py-2.5 bg-white/90 backdrop-blur-sm border border-white/20 rounded-full text-xs font-bold uppercase tracking-widest hover:bg-white transition-all shadow-lg hover:shadow-xl text-slate-800"
               >
-                {loading ? 'Uploading...' : 'Save Image'}
+                {isEditing ? 'Save Changes' : 'Edit Profile'}
               </button>
-            )}
-          </form>
-        </div>
-
-        {/* User Info Section - Fixed for better visibility */}
-        <div className="flex-1 pb-4">
-          <h1 className="text-3xl font-bold text-white mb-2 drop-shadow-md">{userName || 'User Profile'}</h1>
-          <p className="text-slate-200 text-sm tracking-wide flex items-center gap-2">
-            <span className="w-2 h-2 bg-emerald-400 rounded-full shadow-sm"></span>
-            Account Active • Verified Member
-          </p>
-          <p className="text-slate-300 text-sm mt-4">
-         
-          </p>
-        </div>
-
-        {/* Edit Profile Button */}
-        <div className="pb-4 flex gap-3">
-          <button 
-            onClick={() => setIsEditing(!isEditing)}
-            className="px-6 py-2.5 bg-white/90 backdrop-blur-sm border border-white/20 rounded-full text-xs font-bold uppercase tracking-widest hover:bg-white transition-all shadow-lg hover:shadow-xl text-slate-800"
-          >
-            {isEditing ? 'Save Changes' : 'Edit Profile'}
-          </button>
+            </div>
+          </div>
         </div>
       </div>
-    </div>
-  </div>
+
       {/* MAIN CONTENT AREA */}
       <main className="max-w-5xl mx-auto px-8 pt-24 pb-20">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
           
-          {/* LEFT COLUMN: PERSONAL INFO & UPLOAD FORMS */}
+          {/* LEFT COLUMN: PERSONAL INFO */}
           <div className="lg:col-span-2 space-y-10">
             <section>
               <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-amber-600 mb-6">Personal Identity</h3>
@@ -224,19 +224,19 @@ export default function ProfilePage() {
               </div>
             </section>
 
-            {/* QR Code Upload Section */}
-            <section>
-              <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-amber-600 mb-6">QR Code Upload</h3>
+            {/* Profile Image Upload Section */}
+            {/* <section>
+              <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-amber-600 mb-6">Profile Image</h3>
               <div className="bg-slate-50 rounded-xl p-6 border border-slate-200">
-                <form onSubmit={handleQRUpload} className="space-y-4">
+                <form onSubmit={handleProfileImageUpload} className="space-y-4">
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-2">
-                      Upload QR Code Image
+                      Upload Profile Image
                     </label>
                     <input 
                       type="file" 
                       accept="image/*"
-                      onChange={handleFileChange}
+                      onChange={handleProfileFileChange}
                       className="block w-full text-sm text-slate-500
                         file:mr-4 file:py-2 file:px-4
                         file:rounded-full file:border-0
@@ -249,14 +249,14 @@ export default function ProfilePage() {
                     </p>
                   </div>
                   
-                  {file && (
+                  {profileFile && (
                     <div className="mt-4">
                       <p className="text-sm font-medium text-slate-700 mb-2">Preview:</p>
                       <div className="w-32 h-32 border border-slate-300 rounded-lg overflow-hidden">
                         <img 
-                          src={URL.createObjectURL(file)} 
-                          alt="QR Code Preview" 
-                          className="w-full h-full object-contain"
+                          src={URL.createObjectURL(profileFile)} 
+                          alt="Profile Preview" 
+                          className="w-full h-full object-cover"
                         />
                       </div>
                     </div>
@@ -264,42 +264,110 @@ export default function ProfilePage() {
                   
                   <button 
                     type="submit"
-                    disabled={!file || loading}
+                    disabled={!profileFile || loading}
                     className="px-6 py-2.5 bg-amber-500 text-white rounded-full text-xs font-bold uppercase tracking-widest hover:bg-amber-600 transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {loading ? 'Uploading...' : 'Upload QR Code'}
+                    {loading ? 'Uploading...' : 'Upload Profile Image'}
                   </button>
                 </form>
               </div>
-            </section>
+            </section> */}
           </div>
 
-          {/* RIGHT COLUMN: MEMBERSHIP CARD */}
+          {/* RIGHT COLUMN: QR CODE UPLOAD */}
           <div className="space-y-8">
+            {/* QR Code Upload Card */}
             <div className="bg-slate-900 rounded-3xl p-8 text-white relative overflow-hidden shadow-2xl shadow-slate-300">
               {/* Decorative Glow */}
               <div className="absolute -top-10 -right-10 w-32 h-32 bg-amber-500/20 blur-3xl rounded-full"></div>
               
               <div className="relative z-10">
-                <div className="flex justify-between items-start mb-12">
+                <div className="flex justify-between items-start mb-8">
                   <div className="w-8 h-8 bg-amber-400 rotate-45 flex items-center justify-center">
                     <div className="w-2 h-2 bg-slate-900 rotate-45"></div>
                   </div>
-                  <span className="text-[10px] font-bold tracking-[0.2em] text-amber-400 uppercase">Premium Tier</span>
+                  <span className="text-[10px] font-bold tracking-[0.2em] text-amber-400 uppercase">QR Code</span>
                 </div>
                 
-                <p className="text-[10px] text-slate-400 uppercase tracking-widest mb-1">Membership ID</p>
-                <h4 className="text-xl font-mono mb-8 tracking-tighter">AX-9920-2026</h4>
+                {/* QR Code Display/Upload Area */}
+                <div className="mb-8">
+                  {qrPreview ? (
+                    <div className="flex flex-col items-center">
+                      <div className="w-48 h-48 bg-white p-4 rounded-xl shadow-lg mb-4">
+                        <img 
+                          src={qrPreview} 
+                          alt="Uploaded QR Code" 
+                          className="w-full h-full object-contain"
+                        />
+                      </div>
+                      <p className="text-xs text-slate-300 text-center">Your uploaded QR code</p>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center h-48 bg-slate-800/50 rounded-xl border-2 border-dashed border-slate-700 mb-4">
+                      <div className="text-4xl mb-2">📷</div>
+                      <p className="text-sm text-slate-400 text-center">No QR code uploaded yet</p>
+                      <p className="text-xs text-slate-500 mt-1 text-center">Upload your QR code image</p>
+                    </div>
+                  )}
+                </div>
                 
-                <div className="flex justify-between items-end">
-                  <div>
-                    <p className="text-[10px] text-slate-400 uppercase tracking-widest">Valid Thru</p>
-                    <p className="text-sm font-bold">12 / 2028</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-[10px] text-slate-400 uppercase tracking-widest">Points</p>
-                    <p className="text-sm font-bold text-amber-400">12,450</p>
-                  </div>
+                {/* QR Code Upload Form */}
+                <div className="pt-6 border-t border-slate-700/50">
+                  <form onSubmit={handleQRUpload} className="space-y-4">
+                    <div>
+                      <label className="block text-xs font-medium text-slate-300 mb-2">
+                        Upload QR Code
+                      </label>
+                      <input 
+                        type="file" 
+                        accept="image/*"
+                        onChange={handleQrFileChange}
+                        className="block w-full text-xs text-slate-300
+                          file:mr-4 file:py-2 file:px-4
+                          file:rounded-full file:border-0
+                          file:text-xs file:font-semibold
+                          file:bg-amber-500/20 file:text-amber-300
+                          hover:file:bg-amber-500/30"
+                      />
+                      <p className="mt-1 text-xs text-slate-400">
+                        Supports JPG, PNG. Max file size: 5MB
+                      </p>
+                    </div>
+                    
+                    {qrFile && !qrPreview && (
+                      <div className="mt-3">
+                        <p className="text-xs font-medium text-slate-300 mb-2">Preview:</p>
+                        <div className="w-32 h-32 border border-slate-600 rounded-lg overflow-hidden bg-white/10 mx-auto">
+                          <img 
+                            src={URL.createObjectURL(qrFile)} 
+                            alt="QR Code Preview" 
+                            className="w-full h-full object-contain p-2"
+                          />
+                        </div>
+                      </div>
+                    )}
+                    
+                    <button 
+                      type="submit"
+                      disabled={!qrFile || loading}
+                      className="w-full px-4 py-3 bg-amber-500 text-white rounded-xl text-sm font-bold uppercase tracking-widest hover:bg-amber-600 transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {loading ? 'Uploading...' : 'Upload QR Code'}
+                    </button>
+                    
+                    {qrPreview && (
+                      <button 
+                        type="button"
+                        onClick={() => {
+                          setQrFile(null);
+                          setQrPreview('');
+                        }}
+                        className="w-full px-4 py-2 bg-slate-700/50 text-slate-300 rounded-xl text-xs font-medium hover:bg-slate-700/70 transition-all mt-2"
+                      >
+                        Remove QR Code
+                      </button>
+                    )}
+                  </form>
                 </div>
               </div>
             </div>

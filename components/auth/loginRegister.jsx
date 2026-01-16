@@ -78,14 +78,14 @@ export default function LoginRegister() {
           {/* Header */}
           <div className="text-center mb-6 md:mb-8">
             <div className="flex items-center justify-center mb-4 md:mb-5">
-              <div className="relative w-28 h-28 md:w-36 md:h-36">
+              <div className="relative w-38 h-38 md:w-56 md:h-56">
                 <Image
                   src="/Har-Ghar-Rozgaar.png"
                   alt="Har Ghar Rozgaar Logo"
                   fill
                   priority
                   className="object-contain"
-                  sizes="(max-width: 768px) 112px, 144px"
+                  sizes="(max-width: 988px) 212px, 244px"
                 />
               </div>
             </div>

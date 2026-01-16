@@ -23,10 +23,6 @@ const TaskSubmissionSchema = new mongoose.Schema(
       reviewLink: {
         type: String,
       },
-
-      username: {
-        type: String,
-      },
     },
 
     status: {

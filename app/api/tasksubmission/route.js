@@ -27,7 +27,6 @@ export async function POST(req) {
 
     const userId = formData.get("user");
     const task = formData.get("task");
-    const companyname = formData.get("username");
     const reviewLink = formData.get("reviewLink");
     const file = formData.get("screenshot");
 
@@ -72,7 +71,6 @@ export async function POST(req) {
     const submission = await TaskSubmission.create({
       task,
       user: new mongoose.Types.ObjectId(userId),
-      companyname,
       proof: {
         screenshotUrl,
         reviewLink,

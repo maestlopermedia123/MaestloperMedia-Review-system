@@ -75,7 +75,6 @@ export default function ReviewDashboard() {
 
     formData.append("task", selectedTaskId);
     formData.append("user", userId);
-    formData.append("username", form.username);
     formData.append("reviewLink", form.reviewLink);
     if (form.screenshot) {
       formData.append("screenshot", form.screenshot);
@@ -112,7 +111,6 @@ export default function ReviewDashboard() {
       alert("Task submitted successfully!");
       
       setForm({
-        username: "",
         reviewLink: "",
         screenshot: null,
       });
@@ -232,7 +230,7 @@ export default function ReviewDashboard() {
               />
               <svg className="w-4 h-4 absolute left-4 top-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
             </div>
-            <select
+            {/* <select
               value={status}
               onChange={e => setStatus(e.target.value)}
               className="px-4 py-2.5 bg-white border border-slate-200 rounded-full text-sm font-medium focus:ring-1 focus:ring-slate-900 outline-none shadow-sm cursor-pointer"
@@ -241,7 +239,7 @@ export default function ReviewDashboard() {
               <option value="Approved">Approved</option>
               <option value="In Review">In Review</option>
               <option value="Pending">Pending</option>
-            </select>
+            </select> */}
           </div>
 
         </div>
@@ -359,19 +357,7 @@ export default function ReviewDashboard() {
       {/* THE MODAL USAGE */}
       <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
         <form className="space-y-5" onSubmit={handleSubmit}>
-          <div className="space-y-2">
-            <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">
-              Company Name
-            </label>
-            <input
-              name="username"
-              value={form.username}
-              onChange={handleChange}
-              className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm"
-              placeholder="Enter Company name..."
-              required
-            />
-          </div>
+          
 
           <div className="space-y-2">
             <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">
