@@ -2,19 +2,20 @@
 import React from 'react';
 import Image from "next/image";
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 
 export default function Header() {
     const { user, logout, loading } = useAuth();
     const [userName, setUserName] = React.useState('');
+    const pathname = usePathname();
+    const router = useRouter();
+
     React.useEffect(() => {
         if (user && user.name) {
             setUserName(user.name);
         }
     }, [user]);
-
-    const pathname = usePathname();
 
     return (
         <nav className="bg-slate-50/90 backdrop-blur-xl border-b border-slate-200/60 sticky top-0 z-50">
@@ -60,22 +61,24 @@ export default function Header() {
                         </>
                     ) : (
                         <>
-                            <NavItem 
-                                label="Features" 
-                                href="#features" 
-                                active={false}
-                            />
-                            <NavItem 
-                                label="How it Works" 
-                                href="#how-it-works" 
-                                active={false}
-                            />
+                            {/* Always use links that go to home page first */}
+                            <Link 
+                                href="/#features"
+                                className="text-slate-400 hover:text-slate-600 transition-all relative py-2"
+                            >
+                                Features
+                            </Link>
+                            <Link 
+                                href="/#how-it-works"
+                                className="text-slate-400 hover:text-slate-600 transition-all relative py-2"
+                            >
+                                How it Works
+                            </Link>
                             <NavItem 
                                 label="Contact" 
                                 href="/contact" 
-                                active={false}
+                                active={pathname === '/contact'} 
                             />
-
                         </>
                     )}
                 </div>
@@ -134,17 +137,12 @@ export default function Header() {
                     ) : (
                         /* Login/Signup buttons for non-logged-in users */
                         <div className="flex items-center gap-4">
-                            {/* <Link 
-                                href="/login" 
-                                className="px-6 py-2.5 text-[12px] font-bold uppercase tracking-widest text-slate-600 hover:text-slate-900 transition-colors"
-                            >
-                                Login
-                            </Link> */}
+                          
                             <Link 
                                 href="/login" 
                                 className="px-6 py-2.5 bg-slate-900 text-white text-[12px] font-bold uppercase tracking-widest rounded-full hover:bg-slate-800 transition-all shadow-sm"
                             >
-                                Get Started
+                                Login/Register
                             </Link>
                         </div>
                     )}
@@ -154,6 +152,7 @@ export default function Header() {
     );
 }
 
+// Regular navigation item for page links
 function NavItem({ label, href, active }) {
     return (
         <Link 
