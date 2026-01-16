@@ -184,7 +184,7 @@ export default function LoginRegister() {
                 onClick={() => setIsLogin(!isLogin)}
                 className="ml-2 font-bold text-slate-900 hover:text-amber-600 transition-colors"
               >
-                {isLogin ? 'Create one' : 'Sign in'}
+                {isLogin ? 'Register' : 'Sign in'}
               </button>
             </p>
           </div>
