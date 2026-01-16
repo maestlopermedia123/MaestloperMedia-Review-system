@@ -1,5 +1,5 @@
 "use client";
-import BASE_URL from "@/config/baseUrl"
+import BASE_URL from "@/utils/baseUrl";
 import React, { useState, useEffect, useMemo } from "react";
 import {
   Search,
