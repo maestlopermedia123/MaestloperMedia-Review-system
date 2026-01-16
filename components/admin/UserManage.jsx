@@ -10,7 +10,7 @@ import {
   Clock,
   X
 } from "lucide-react";
-
+import BASE_URL from "@/utils/baseUrl";
 export default function UserManage() {
   // Task submission data state
   const [submissions, setSubmissions] = useState([]);
@@ -157,7 +157,7 @@ export default function UserManage() {
 
                 <td className="px-6 py-4">
                   <a
-                    href={`http://localhost:3000/admin/users/${submission.user}`}
+                    href={`${BASE_URL}/${submission.user}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-1 text-sm text-indigo-600 hover:text-indigo-800 hover:underline"
@@ -239,7 +239,7 @@ export default function UserManage() {
                     User ID
                   </label>
                   <a
-                    href={`http://localhost:3000/admin/users/${selectedSubmission.user}`}
+                    href={`${BASE_URL}/${selectedSubmission.user}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="font-mono text-sm text-indigo-600 hover:text-indigo-800 hover:underline inline-flex items-center gap-1"
