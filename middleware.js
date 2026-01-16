@@ -3,8 +3,8 @@ import { jwtVerify } from "jose";
 
 const secret = new TextEncoder().encode(process.env.JWT_SECRET);
 
-// file extensions to allow
 const PUBLIC_FILE = /\.(.*)$/;
+const PUBLIC_PATHS = ['/','/contact', '/login', '/register'];
 
 export async function middleware(request) {
   const { pathname } = request.nextUrl;
@@ -14,10 +14,13 @@ export async function middleware(request) {
     PUBLIC_FILE.test(pathname) ||
     pathname.startsWith("/_next") ||
     pathname.startsWith("/api/auth") ||
-    pathname.startsWith("/login") ||
-    pathname.startsWith("/register") ||
     pathname === "/favicon.ico"
   ) {
+    return NextResponse.next();
+  }
+
+  // ✅ Allow public paths without authentication
+  if (PUBLIC_PATHS.includes(pathname)) {
     return NextResponse.next();
   }
 
