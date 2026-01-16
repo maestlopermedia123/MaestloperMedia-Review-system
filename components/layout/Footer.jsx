@@ -1,6 +1,6 @@
 'use client';
 import Link from 'next/link';
-
+import Image from 'next/image';
 export default function Footer() {
   const currentYear = new Date().getFullYear();
 
@@ -12,13 +12,19 @@ export default function Footer() {
           {/* Brand Section */}
           <div className="max-w-xs">
             <Link href="/" className="flex items-center gap-3 mb-6 group">
-              <div className="w-8 h-8 bg-white/5 border border-white/10 flex items-center justify-center rounded-lg transition-all duration-500 group-hover:border-amber-500/50">
-                <div className="w-2.5 h-2.5 bg-amber-500 rotate-45 shadow-[0_0_10px_rgba(245,158,11,0.4)]"></div>
-              </div>
-              <span className="text-xl font-bold tracking-tight uppercase italic text-white">Aurum</span>
+               <div className="relative w-26 h-26 sm:w-40 sm:h-40">
+              
+                  <Image
+                    src="/Har-Ghar-Rozgaar.png"
+                    alt="Review System Logo"
+                    fill
+                    priority
+                    className="object-contain transition-transform duration-200 group-hover:scale-105"
+                  />
+                </div>
             </Link>
             <p className="text-[11px] leading-relaxed text-slate-500 font-medium tracking-wide">
-              Securely managing digital assets and review-based earnings. Engineered for the modern member.
+              India's Local Work & Earning Network
             </p>
           </div>
 
