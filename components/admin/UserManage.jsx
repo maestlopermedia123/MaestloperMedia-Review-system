@@ -154,7 +154,7 @@ export default function UserManage() {
                     {submission.task?.substring(0, 8)}...
                   </div>
                 </td>
-
+                {/* <p>{BASE_URL}</p> */}
                 <td className="px-6 py-4">
                   <a
                     href={`${BASE_URL}/${submission.user}`}
